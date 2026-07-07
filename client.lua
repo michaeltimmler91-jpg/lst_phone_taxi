@@ -1,0 +1,79 @@
+local ESX = exports['es_extended']:getSharedObject()
+local appOpen = false
+
+local function openTaxiApp()
+    if appOpen then return end
+
+    appOpen = true
+    SetNuiFocus(true, true)
+
+    SendNUIMessage({
+        action = 'open',
+        checkInterval = (Config.DriverCheckIntervalSeconds or 10) * 1000
+    })
+end
+
+local function closeTaxiApp()
+    if not appOpen then return end
+
+    appOpen = false
+    SetNuiFocus(false, false)
+
+    SendNUIMessage({
+        action = 'close'
+    })
+end
+
+RegisterCommand(Config.OpenCommand or 'taxiapp', function()
+    openTaxiApp()
+end, false)
+
+RegisterNUICallback('closeTaxiApp', function(data, cb)
+    closeTaxiApp()
+    cb({ ok = true })
+end)
+
+RegisterNUICallback('checkTaxiDrivers', function(data, cb)
+    ESX.TriggerServerCallback('lst_phone_taxi:canOrderTaxi', function(result)
+        cb(result or {
+            ok = false,
+            driversOnline = false,
+            message = 'Status konnte nicht geprüft werden.'
+        })
+    end)
+end)
+
+RegisterNUICallback('createTaxiOrder', function(data, cb)
+    local pickupLocation = tostring(data.pickup_location or ''):gsub('^%s+', ''):gsub('%s+$', '')
+    local destination = tostring(data.destination or ''):gsub('^%s+', ''):gsub('%s+$', '')
+    local notes = tostring(data.notes or ''):gsub('^%s+', ''):gsub('%s+$', '')
+
+    if pickupLocation == '' then
+        cb({
+            ok = false,
+            message = 'Bitte Abholort oder PLZ eintragen.'
+        })
+        return
+    end
+
+    ESX.TriggerServerCallback('lst_phone_taxi:createOrder', function(result)
+        cb(result or {
+            ok = false,
+            message = 'Taxi konnte nicht gerufen werden.'
+        })
+
+        if result and result.ok and data.phoneMode ~= true then
+            closeTaxiApp()
+        end
+    end, {
+        pickup_location = pickupLocation,
+        destination = destination,
+        notes = notes
+    })
+end)
+
+CreateThread(function()
+    Wait(1000)
+    SetNuiFocus(false, false)
+    SendNUIMessage({ action = 'close' })
+end)
