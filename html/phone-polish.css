@@ -1,27 +1,38 @@
 body.phone-mode,
 body.phone-mode.visible {
     background: radial-gradient(circle at top, #111827 0%, #020617 55%, #000814 100%);
+    -webkit-font-smoothing: subpixel-antialiased;
+    text-rendering: geometricPrecision;
+    font-family: Arial, Helvetica, sans-serif;
 }
 
 body.phone-mode .app {
     padding: 12px 14px 30px;
+    transform: translateZ(0);
+    backface-visibility: hidden;
 }
 
 body.phone-mode .hero {
-    padding: 10px 4px 14px;
-    gap: 12px;
+    padding: 8px 4px 12px;
+    gap: 11px;
 }
 
 body.phone-mode .icon {
-    width: 52px;
-    height: 52px;
-    border-radius: 16px;
-    font-size: 29px;
+    width: 46px;
+    height: 46px;
+    border-radius: 14px;
+    font-size: 25px;
 }
 
 body.phone-mode h1 {
-    font-size: 25px;
+    font-size: 24px;
     line-height: 1.05;
+    font-weight: 900;
+    letter-spacing: -0.02em;
+}
+
+body.phone-mode p {
+    font-weight: 700;
 }
 
 body.phone-mode .card {
@@ -31,7 +42,7 @@ body.phone-mode .card {
 }
 
 .active-order-card {
-    line-height: 1.35;
+    line-height: 1.45;
     background: linear-gradient(180deg, rgba(8, 47, 73, 0.90), rgba(15, 23, 42, 0.92));
 }
 
@@ -54,9 +65,11 @@ body.phone-mode .card {
     align-items: center;
     gap: 9px;
     margin-bottom: 11px;
-    color: #e0f2fe;
-    font-size: 17px;
+    color: #f8fafc;
+    font-size: 18px;
+    font-weight: 900;
     line-height: 1.15;
+    letter-spacing: -0.01em;
 }
 
 .status-badge {
@@ -75,7 +88,7 @@ body.phone-mode .card {
 .completed-badge { background: rgba(34, 197, 94, 0.18); }
 
 .status-copy {
-    padding: 10px 11px;
+    padding: 11px 12px;
     margin-bottom: 10px;
     border-radius: 14px;
     background: rgba(2, 6, 23, 0.36);
@@ -84,17 +97,18 @@ body.phone-mode .card {
 
 .status-main {
     margin: 0;
-    color: #f8fafc;
-    font-size: 13.5px;
-    font-weight: 800;
-    line-height: 1.35;
+    color: #ffffff;
+    font-size: 15px;
+    font-weight: 900;
+    line-height: 1.45;
 }
 
 .status-sub {
     margin: 6px 0 0;
-    color: #94a3b8;
-    font-size: 12.5px;
-    line-height: 1.35;
+    color: #cbd5e1;
+    font-size: 13.5px;
+    font-weight: 800;
+    line-height: 1.45;
 }
 
 .details-list {
@@ -107,7 +121,7 @@ body.phone-mode .card {
     display: flex;
     align-items: center;
     gap: 10px;
-    padding: 10px 11px;
+    padding: 11px 12px;
     border-radius: 14px;
     background: rgba(15, 23, 42, 0.74);
     border: 1px solid rgba(148, 163, 184, 0.13);
@@ -132,18 +146,27 @@ body.phone-mode .card {
 
 .detail-label {
     display: block;
-    color: #94a3b8;
-    font-size: 11.5px;
-    font-weight: 800;
+    color: #cbd5e1;
+    font-size: 12.5px;
+    font-weight: 900;
     text-transform: uppercase;
     letter-spacing: 0.04em;
-    margin-bottom: 2px;
+    margin-bottom: 3px;
 }
 
 .detail-value {
     display: block;
-    color: #f8fafc;
-    font-size: 14px;
-    font-weight: 800;
+    color: #ffffff;
+    font-size: 16px;
+    font-weight: 900;
+    line-height: 1.25;
     word-break: break-word;
+}
+
+body.phone-mode input,
+body.phone-mode textarea,
+body.phone-mode button {
+    font-size: 16px;
+    font-weight: 800;
+    -webkit-font-smoothing: subpixel-antialiased;
 }
