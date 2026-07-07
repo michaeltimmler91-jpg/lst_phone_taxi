@@ -1,4 +1,9 @@
-const phoneMode = new URLSearchParams(window.location.search).get('phone') === '1';
+const params = new URLSearchParams(window.location.search);
+const phoneMode = params.get('phone') === '1' || window.location.pathname.endsWith('/phone.html');
+
+if (phoneMode) {
+    document.body.classList.add('phone-mode');
+}
 
 async function nui(event, data = {}) {
     const resource = 'lst_phone_taxi';
@@ -221,7 +226,10 @@ function hideApp() {
 
 async function closeApp() {
     hideApp();
-    await nui('closeTaxiApp');
+
+    if (!phoneMode) {
+        await nui('closeTaxiApp');
+    }
 }
 
 async function submitOrder() {
@@ -288,16 +296,22 @@ window.addEventListener('message', (event) => {
 });
 
 window.addEventListener('keydown', (event) => {
-    if (event.key === 'Escape') {
+    if (event.key === 'Escape' && !phoneMode) {
         closeApp();
     }
 });
 
 submitBtn.addEventListener('click', submitOrder);
-closeBtn.addEventListener('click', closeApp);
+
+if (closeBtn) {
+    closeBtn.addEventListener('click', closeApp);
+}
 
 if (phoneMode) {
-    closeBtn.style.display = 'none';
+    if (closeBtn) {
+        closeBtn.style.display = 'none';
+    }
+
     showApp();
 } else {
     hideApp();
