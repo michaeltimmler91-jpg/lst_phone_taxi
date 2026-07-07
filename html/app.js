@@ -1,5 +1,8 @@
 const params = new URLSearchParams(window.location.search);
-const phoneMode = params.get('phone') === '1' || window.location.pathname.endsWith('/phone.html');
+const phoneMode =
+    params.get('phone') === '1' ||
+    window.location.pathname.endsWith('/phone.html') ||
+    document.body.classList.contains('phone-ui');
 
 if (phoneMode) {
     document.body.classList.add('phone-mode');
@@ -9,6 +12,10 @@ async function nui(event, data = {}) {
     const resource = 'lst_phone_taxi';
 
     try {
+        if (phoneMode && typeof globalThis.fetchNui === 'function') {
+            return await globalThis.fetchNui(event, data, resource);
+        }
+
         const response = await fetch(`https://${resource}/${event}`, {
             method: 'POST',
             headers: {
