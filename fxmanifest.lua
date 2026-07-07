@@ -8,6 +8,8 @@ version '1.1.1'
 
 lua54 'yes'
 
+dependency 'lb-phone'
+
 ui_page 'html/index.html'
 
 files {
