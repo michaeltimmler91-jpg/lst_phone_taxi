@@ -71,6 +71,40 @@ function escapeHtml(value) {
         .replaceAll("'", '&#039;');
 }
 
+function orderDetailsHtml(order, showDriver = false) {
+    const driver = order?.assigned_driver || '';
+    const pickup = order?.pickup_location || '-';
+    const destination = order?.destination || '-';
+
+    return `
+        <div class="details-list">
+            ${showDriver && driver ? `
+                <div class="detail-row">
+                    <span class="detail-icon">👤</span>
+                    <div class="detail-content">
+                        <span class="detail-label">Fahrer</span>
+                        <span class="detail-value">${escapeHtml(driver)}</span>
+                    </div>
+                </div>
+            ` : ''}
+            <div class="detail-row">
+                <span class="detail-icon">📍</span>
+                <div class="detail-content">
+                    <span class="detail-label">Abholort</span>
+                    <span class="detail-value">${escapeHtml(pickup)}</span>
+                </div>
+            </div>
+            <div class="detail-row">
+                <span class="detail-icon">🏁</span>
+                <div class="detail-content">
+                    <span class="detail-label">Ziel</span>
+                    <span class="detail-value">${escapeHtml(destination)}</span>
+                </div>
+            </div>
+        </div>
+    `;
+}
+
 function isTypingInForm() {
     return document.activeElement === pickupInput ||
         document.activeElement === destinationInput ||
@@ -133,22 +167,20 @@ function resetBoxes() {
     formBox.style.display = 'none';
     offlineBox.style.display = 'none';
     activeOrderBox.style.display = 'none';
+    activeOrderBox.className = 'card active-order-card';
 }
 
 function renderCompletedOrder(order) {
     resetBoxes();
 
-    const driver = order?.assigned_driver || '';
-    const pickup = order?.pickup_location || '-';
-    const destination = order?.destination || '-';
-
-    activeOrderTitle.innerText = '✅ Fahrt abgeschlossen';
+    activeOrderBox.classList.add('completed-card');
+    activeOrderTitle.innerHTML = '<span class="status-badge completed-badge">✅</span><span>Fahrt abgeschlossen</span>';
     activeOrderText.innerHTML = `
-        <p>Vielen Dank für deine Fahrt!</p>
-        <p>Diese Meldung verschwindet automatisch nach 30 Sekunden.</p>
-        ${driver ? `<p><strong>Fahrer:</strong><br>${escapeHtml(driver)}</p>` : ''}
-        <p><strong>Abholort:</strong><br>${escapeHtml(pickup)}</p>
-        <p><strong>Ziel:</strong><br>${escapeHtml(destination)}</p>
+        <div class="status-copy">
+            <p class="status-main">Vielen Dank für deine Fahrt!</p>
+            <p class="status-sub">Du kannst gleich wieder ein Taxi rufen. Diese Meldung verschwindet automatisch nach 30 Sekunden.</p>
+        </div>
+        ${orderDetailsHtml(order, true)}
     `;
     activeOrderBox.style.display = 'block';
     scheduleCompletedSeen(order);
@@ -159,28 +191,29 @@ function renderActiveOrder(order) {
     resetBoxes();
 
     const status = order?.job_status || 'Offen';
-    const driver = order?.assigned_driver || '';
-    const pickup = order?.pickup_location || '-';
-    const destination = order?.destination || '-';
 
     if (status === 'Übernommen' || status === 'Unterwegs' || status === 'Fahrer angekommen') {
-        activeOrderTitle.innerText = '🚖 Fahrer unterwegs';
+        activeOrderBox.classList.add('driver-card');
+        activeOrderTitle.innerHTML = '<span class="status-badge driver-badge">🚖</span><span>Fahrer unterwegs</span>';
         activeOrderText.innerHTML = `
-            <p>Dein Taxi ist unterwegs.</p>
-            ${driver ? `<p><strong>Fahrer:</strong><br>${escapeHtml(driver)}</p>` : ''}
-            <p><strong>Abholort:</strong><br>${escapeHtml(pickup)}</p>
-            <p><strong>Ziel:</strong><br>${escapeHtml(destination)}</p>
+            <div class="status-copy">
+                <p class="status-main">Dein Taxi ist unterwegs.</p>
+                <p class="status-sub">Bitte bleib am angegebenen Abholort.</p>
+            </div>
+            ${orderDetailsHtml(order, true)}
         `;
         activeOrderBox.style.display = 'block';
         return;
     }
 
-    activeOrderTitle.innerText = '🚕 Auftrag eingegangen';
+    activeOrderBox.classList.add('received-card');
+    activeOrderTitle.innerHTML = '<span class="status-badge received-badge">📨</span><span>Auftrag eingegangen</span>';
     activeOrderText.innerHTML = `
-        <p>Deine Anfrage ist bei unserer Leitstelle eingegangen.</p>
-        <p>Wir informieren dich, sobald ein Fahrer unterwegs ist.</p>
-        <p><strong>Abholort:</strong><br>${escapeHtml(pickup)}</p>
-        <p><strong>Ziel:</strong><br>${escapeHtml(destination)}</p>
+        <div class="status-copy">
+            <p class="status-main">Deine Anfrage ist bei unserer Leitstelle eingegangen.</p>
+            <p class="status-sub">Wir informieren dich, sobald ein Fahrer unterwegs ist.</p>
+        </div>
+        ${orderDetailsHtml(order, false)}
     `;
     activeOrderBox.style.display = 'block';
 }
