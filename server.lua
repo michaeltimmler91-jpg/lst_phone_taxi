@@ -1,5 +1,11 @@
 local ESX = exports['es_extended']:getSharedObject()
-local lastTaxiOrder = {}
+
+local ACTIVE_JOB_STATUSES = {
+    'Offen',
+    'Übernommen',
+    'Unterwegs',
+    'Fahrer angekommen'
+}
 
 local function debugPrint(...)
     if Config.Debug then
@@ -12,6 +18,27 @@ local function trim(value)
     return value:gsub('^%s+', ''):gsub('%s+$', '')
 end
 
+local function urlEncode(value)
+    value = tostring(value or '')
+
+    value = value:gsub('\n', '\r\n')
+    value = value:gsub('([^%w%-_%.~])', function(char)
+        return string.format('%%%02X', string.byte(char))
+    end)
+
+    return value
+end
+
+local function postgrestIn(values)
+    local encoded = {}
+
+    for _, value in ipairs(values) do
+        encoded[#encoded + 1] = urlEncode(value)
+    end
+
+    return 'in.(' .. table.concat(encoded, ',') .. ')'
+end
+
 local function isSupabaseConfigured()
     return Config.SupabaseUrl
         and Config.SupabaseAnonKey
@@ -19,6 +46,22 @@ local function isSupabaseConfigured()
         and Config.SupabaseAnonKey ~= ''
         and Config.SupabaseUrl ~= 'https://DEIN-PROJEKT.supabase.co'
         and Config.SupabaseAnonKey ~= 'HIER_DEIN_SUPABASE_ANON_KEY'
+end
+
+local function supabaseHeaders(extra)
+    local headers = {
+        ['apikey'] = Config.SupabaseAnonKey,
+        ['Authorization'] = 'Bearer ' .. Config.SupabaseAnonKey,
+        ['Content-Type'] = 'application/json'
+    }
+
+    if extra then
+        for key, value in pairs(extra) do
+            headers[key] = value
+        end
+    end
+
+    return headers
 end
 
 local function checkDriversOnline(cb)
@@ -47,11 +90,7 @@ local function checkDriversOnline(cb)
 
         debugPrint('Drivers online check rows:', #rows)
         cb(#rows > 0)
-    end, 'GET', '', {
-        ['apikey'] = Config.SupabaseAnonKey,
-        ['Authorization'] = 'Bearer ' .. Config.SupabaseAnonKey,
-        ['Content-Type'] = 'application/json'
-    })
+    end, 'GET', '', supabaseHeaders())
 end
 
 local function getIdentifier(source, xPlayer)
@@ -86,7 +125,40 @@ local function getPlayerDisplayName(source)
     return GetPlayerName(source) or 'Unbekannt'
 end
 
-local function sendToWorker(payload)
+local function getActiveTaxiOrder(identifier, cb)
+    if not isSupabaseConfigured() then
+        cb(nil)
+        return
+    end
+
+    local url = Config.SupabaseUrl
+        .. '/rest/v1/taxi_jobs'
+        .. '?select=id,job_status,pickup_location,destination,assigned_driver,created_at,phone_status'
+        .. '&customer_identifier=eq.' .. urlEncode(identifier)
+        .. '&job_status=' .. postgrestIn(ACTIVE_JOB_STATUSES)
+        .. '&order=created_at.desc'
+        .. '&limit=1'
+
+    PerformHttpRequest(url, function(statusCode, responseText)
+        if statusCode < 200 or statusCode >= 300 then
+            debugPrint('Active order check failed', statusCode, responseText or '')
+            cb(nil)
+            return
+        end
+
+        local ok, rows = pcall(json.decode, responseText or '[]')
+
+        if not ok or type(rows) ~= 'table' then
+            debugPrint('Active order decode failed', responseText or '')
+            cb(nil)
+            return
+        end
+
+        cb(rows[1])
+    end, 'GET', '', supabaseHeaders())
+end
+
+local function sendToWorker(payload, cb)
     local headers = {
         ['Content-Type'] = 'application/json'
     }
@@ -97,96 +169,129 @@ local function sendToWorker(payload)
 
     PerformHttpRequest(Config.WorkerUrl, function(statusCode, responseText)
         debugPrint('Worker response', statusCode, responseText or '')
+
+        cb(statusCode >= 200 and statusCode < 300, responseText)
     end, 'POST', json.encode(payload), headers)
 end
 
-local function sendToSupabase(payload)
+local function sendToSupabase(payload, cb)
     local url = Config.SupabaseUrl .. '/rest/v1/taxi_jobs'
 
     PerformHttpRequest(url, function(statusCode, responseText)
         debugPrint('Supabase response', statusCode, responseText or '')
-    end, 'POST', json.encode(payload), {
-        ['Content-Type'] = 'application/json',
-        ['apikey'] = Config.SupabaseAnonKey,
-        ['Authorization'] = 'Bearer ' .. Config.SupabaseAnonKey,
+
+        cb(statusCode >= 200 and statusCode < 300, responseText)
+    end, 'POST', json.encode(payload), supabaseHeaders({
         ['Prefer'] = 'return=minimal'
-    })
+    }))
 end
 
 ESX.RegisterServerCallback('lst_phone_taxi:canOrderTaxi', function(source, cb)
-    checkDriversOnline(function(driversOnline)
-        cb({
-            ok = true,
-            driversOnline = driversOnline
-        })
+    local xPlayer = ESX.GetPlayerFromId(source)
+    local identifier = getIdentifier(source, xPlayer)
+
+    getActiveTaxiOrder(identifier, function(activeOrder)
+        if activeOrder then
+            cb({
+                ok = true,
+                driversOnline = true,
+                hasActiveOrder = true,
+                activeOrder = activeOrder
+            })
+            return
+        end
+
+        checkDriversOnline(function(driversOnline)
+            cb({
+                ok = true,
+                driversOnline = driversOnline,
+                hasActiveOrder = false
+            })
+        end)
     end)
 end)
 
 ESX.RegisterServerCallback('lst_phone_taxi:createOrder', function(source, cb, data)
-    checkDriversOnline(function(driversOnline)
-        if not driversOnline then
+    local src = source
+    local xPlayer = ESX.GetPlayerFromId(src)
+    local identifier = getIdentifier(src, xPlayer)
+
+    getActiveTaxiOrder(identifier, function(activeOrder)
+        if activeOrder then
             cb({
                 ok = false,
-                message = 'Aktuell ist leider kein Taxifahrer im Dienst.'
+                hasActiveOrder = true,
+                activeOrder = activeOrder,
+                message = 'Du hast bereits eine offene Taxianfrage.'
             })
             return
         end
 
-        local src = source
-        local xPlayer = ESX.GetPlayerFromId(src)
-        local identifier = getIdentifier(src, xPlayer)
-        local now = os.time()
-        local cooldownSeconds = (Config.OrderCooldownMinutes or 10) * 60
+        checkDriversOnline(function(driversOnline)
+            if not driversOnline then
+                cb({
+                    ok = false,
+                    message = 'Aktuell ist leider kein Taxifahrer im Dienst.'
+                })
+                return
+            end
 
-        local lastOrder = lastTaxiOrder[identifier]
+            local pickupLocation = trim(data.pickup_location)
+            local destination = trim(data.destination)
+            local notes = trim(data.notes)
 
-        if lastOrder and now - lastOrder < cooldownSeconds then
-            local remaining = math.ceil((cooldownSeconds - (now - lastOrder)) / 60)
+            if pickupLocation == '' then
+                cb({
+                    ok = false,
+                    message = 'Bitte Abholort oder PLZ eintragen.'
+                })
+                return
+            end
 
-            cb({
-                ok = false,
-                message = ('Du hast bereits ein Taxi gerufen. Bitte warte noch ca. %s Minuten.'):format(remaining)
-            })
-            return
-        end
+            local customerName = getPlayerDisplayName(src)
 
-        local pickupLocation = trim(data.pickup_location)
-        local destination = trim(data.destination)
-        local notes = trim(data.notes)
+            local payload = {
+                created_by = Config.JobDefaults.created_by,
+                job_status = Config.JobDefaults.job_status,
+                ride_type = Config.JobDefaults.ride_type,
+                pickup_location = pickupLocation,
+                destination = destination,
+                customer_name = customerName,
+                customer_identifier = identifier,
+                phone_status = 'request_received',
+                notes = notes,
+                assigned_driver = nil,
+                assigned_at = nil
+            }
 
-        if pickupLocation == '' then
-            cb({
-                ok = false,
-                message = 'Bitte Abholort oder PLZ eintragen.'
-            })
-            return
-        end
+            local function onCreated(success, responseText)
+                if not success then
+                    cb({
+                        ok = false,
+                        message = 'Taxi konnte nicht gerufen werden. Bitte versuche es später erneut.'
+                    })
+                    return
+                end
 
-        local customerName = getPlayerDisplayName(src)
+                cb({
+                    ok = true,
+                    message = 'Deine Anfrage ist bei unserer Leitstelle eingegangen.',
+                    hasActiveOrder = true,
+                    activeOrder = {
+                        job_status = 'Offen',
+                        phone_status = 'request_received',
+                        pickup_location = pickupLocation,
+                        destination = destination,
+                        assigned_driver = nil
+                    }
+                })
+            end
 
-        local payload = {
-            created_by = Config.JobDefaults.created_by,
-            job_status = Config.JobDefaults.job_status,
-            ride_type = Config.JobDefaults.ride_type,
-            pickup_location = pickupLocation,
-            destination = destination,
-            customer_name = customerName,
-            notes = notes,
-            assigned_driver = nil,
-            assigned_at = nil
-        }
-
-        lastTaxiOrder[identifier] = now
-
-        if Config.UseWorker then
-            sendToWorker(payload)
-        else
-            sendToSupabase(payload)
-        end
-
-        cb({
-            ok = true,
-            message = 'Deine Anfrage wurde erfolgreich an die Leitstelle übermittelt.'
-        })
+            if Config.UseWorker then
+                sendToWorker(payload, onCreated)
+            else
+                sendToSupabase(payload, onCreated)
+            end
+        end)
     end)
 end)
