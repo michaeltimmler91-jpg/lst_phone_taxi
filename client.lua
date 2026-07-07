@@ -31,7 +31,7 @@ local function registerPhoneApp()
         size = 512,
         images = {},
         icon = 'https://cfx-nui-lst_phone_taxi/html/icon.png',
-        ui = 'lst_phone_taxi/html/phone.html'
+        ui = 'lst_phone_taxi/html/phone.html?v=5'
     }
 
     local ok, result = pcall(function()
