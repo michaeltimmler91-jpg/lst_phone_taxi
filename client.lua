@@ -4,25 +4,16 @@ local phoneAppRegistered = false
 
 local function openTaxiApp()
     if appOpen then return end
-
     appOpen = true
     SetNuiFocus(true, true)
-
-    SendNUIMessage({
-        action = 'open',
-        checkInterval = (Config.DriverCheckIntervalSeconds or 10) * 1000
-    })
+    SendNUIMessage({ action = 'open', checkInterval = (Config.DriverCheckIntervalSeconds or 10) * 1000 })
 end
 
 local function closeTaxiApp()
     if not appOpen then return end
-
     appOpen = false
     SetNuiFocus(false, false)
-
-    SendNUIMessage({
-        action = 'close'
-    })
+    SendNUIMessage({ action = 'close' })
 end
 
 local function registerPhoneApp()
@@ -38,8 +29,8 @@ local function registerPhoneApp()
         removable = false,
         size = 512,
         images = {},
-        icon = 'https://cdn-icons-png.flaticon.com/512/3097/3097180.png',
-        ui = 'nui://lst_phone_taxi/html/phone.html'
+        icon = 'https://cfx-nui-lst_phone_taxi/html/icon.png',
+        ui = 'lst_phone_taxi/html/phone.html'
     }
 
     local ok, result = pcall(function()
@@ -58,18 +49,14 @@ RegisterCommand(Config.OpenCommand or 'taxiapp', function()
     openTaxiApp()
 end, false)
 
-RegisterNUICallback('closeTaxiApp', function(data, cb)
+RegisterNUICallback('closeTaxiApp', function(_, cb)
     closeTaxiApp()
     cb({ ok = true })
 end)
 
-RegisterNUICallback('checkTaxiDrivers', function(data, cb)
+RegisterNUICallback('checkTaxiDrivers', function(_, cb)
     ESX.TriggerServerCallback('lst_phone_taxi:canOrderTaxi', function(result)
-        cb(result or {
-            ok = false,
-            driversOnline = false,
-            message = 'Status konnte nicht geprüft werden.'
-        })
+        cb(result or { ok = false, driversOnline = false, message = 'Status konnte nicht geprüft werden.' })
     end)
 end)
 
@@ -79,27 +66,16 @@ RegisterNUICallback('createTaxiOrder', function(data, cb)
     local notes = tostring(data.notes or ''):gsub('^%s+', ''):gsub('%s+$', '')
 
     if pickupLocation == '' then
-        cb({
-            ok = false,
-            message = 'Bitte Abholort oder PLZ eintragen.'
-        })
+        cb({ ok = false, message = 'Bitte Abholort oder PLZ eintragen.' })
         return
     end
 
     ESX.TriggerServerCallback('lst_phone_taxi:createOrder', function(result)
-        cb(result or {
-            ok = false,
-            message = 'Taxi konnte nicht gerufen werden.'
-        })
-
+        cb(result or { ok = false, message = 'Taxi konnte nicht gerufen werden.' })
         if result and result.ok and data.phoneMode ~= true then
             closeTaxiApp()
         end
-    end, {
-        pickup_location = pickupLocation,
-        destination = destination,
-        notes = notes
-    })
+    end, { pickup_location = pickupLocation, destination = destination, notes = notes })
 end)
 
 CreateThread(function()
@@ -109,11 +85,7 @@ CreateThread(function()
 
     for _ = 1, 20 do
         registerPhoneApp()
-
-        if phoneAppRegistered then
-            break
-        end
-
+        if phoneAppRegistered then break end
         Wait(1000)
     end
 end)
