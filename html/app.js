@@ -62,18 +62,25 @@ function isTypingInForm() {
         document.activeElement === notesInput;
 }
 
-function makeRenderKey(result) {
-    if (result?.hasActiveOrder && result.activeOrder) {
-        const order = result.activeOrder;
+function makeOrderKey(prefix, order) {
+    return [
+        prefix,
+        order?.id || '',
+        order?.job_status || '',
+        order?.phone_status || '',
+        order?.assigned_driver || '',
+        order?.pickup_location || '',
+        order?.destination || ''
+    ].join('|');
+}
 
-        return [
-            'active',
-            order.id || '',
-            order.job_status || '',
-            order.assigned_driver || '',
-            order.pickup_location || '',
-            order.destination || ''
-        ].join('|');
+function makeRenderKey(result) {
+    if (result?.hasCompletedOrder && result.completedOrder) {
+        return makeOrderKey('completed', result.completedOrder);
+    }
+
+    if (result?.hasActiveOrder && result.activeOrder) {
+        return makeOrderKey('active', result.activeOrder);
     }
 
     if (result?.driversOnline === true) {
@@ -88,6 +95,23 @@ function resetBoxes() {
     formBox.style.display = 'none';
     offlineBox.style.display = 'none';
     activeOrderBox.style.display = 'none';
+}
+
+function renderCompletedOrder(order) {
+    resetBoxes();
+
+    const driver = order?.assigned_driver || '';
+    const pickup = order?.pickup_location || '-';
+    const destination = order?.destination || '-';
+
+    activeOrderTitle.innerText = '✅ Fahrt abgeschlossen';
+    activeOrderText.innerHTML = `
+        <p>Vielen Dank für deine Fahrt!</p>
+        ${driver ? `<p><strong>Fahrer:</strong><br>${escapeHtml(driver)}</p>` : ''}
+        <p><strong>Abholort:</strong><br>${escapeHtml(pickup)}</p>
+        <p><strong>Ziel:</strong><br>${escapeHtml(destination)}</p>
+    `;
+    activeOrderBox.style.display = 'block';
 }
 
 function renderActiveOrder(order) {
@@ -133,6 +157,11 @@ function renderDriverState(result, force = false) {
 
     currentRenderKey = nextRenderKey;
     resetBoxes();
+
+    if (result?.hasCompletedOrder && result.completedOrder) {
+        renderCompletedOrder(result.completedOrder);
+        return;
+    }
 
     if (result?.hasActiveOrder && result.activeOrder) {
         renderActiveOrder(result.activeOrder);
