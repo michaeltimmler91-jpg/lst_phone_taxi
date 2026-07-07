@@ -1,7 +1,6 @@
 const phoneMode = new URLSearchParams(window.location.search).get('phone') === '1';
 
 async function nui(event, data = {}) {
-    // Immer diese Resource ansprechen. Im lb-phone-iframe wäre GetParentResourceName() sonst lb-phone.
     const resource = 'lst_phone_taxi';
 
     try {
@@ -35,6 +34,9 @@ const messageBox = document.getElementById('message');
 const formBox = document.getElementById('formBox');
 const offlineBox = document.getElementById('offlineBox');
 const loadingBox = document.getElementById('loadingBox');
+const activeOrderBox = document.getElementById('activeOrderBox');
+const activeOrderTitle = document.getElementById('activeOrderTitle');
+const activeOrderText = document.getElementById('activeOrderText');
 
 let driverCheckTimer = null;
 let driverCheckInterval = 10000;
@@ -44,17 +46,66 @@ function setMessage(text, type = '') {
     messageBox.innerText = text;
 }
 
-function renderDriverState(driversOnline) {
-    loadingBox.style.display = 'none';
+function escapeHtml(value) {
+    return String(value || '')
+        .replaceAll('&', '&amp;')
+        .replaceAll('<', '&lt;')
+        .replaceAll('>', '&gt;')
+        .replaceAll('"', '&quot;')
+        .replaceAll("'", '&#039;');
+}
 
-    if (driversOnline) {
-        offlineBox.style.display = 'none';
+function resetBoxes() {
+    loadingBox.style.display = 'none';
+    formBox.style.display = 'none';
+    offlineBox.style.display = 'none';
+    activeOrderBox.style.display = 'none';
+}
+
+function renderActiveOrder(order) {
+    resetBoxes();
+
+    const status = order?.job_status || 'Offen';
+    const driver = order?.assigned_driver || '';
+    const pickup = order?.pickup_location || '-';
+    const destination = order?.destination || '-';
+
+    if (status === 'Übernommen' || status === 'Unterwegs' || status === 'Fahrer angekommen') {
+        activeOrderTitle.innerText = '🚖 Fahrer unterwegs';
+        activeOrderText.innerHTML = `
+            <p>Dein Taxi ist unterwegs.</p>
+            ${driver ? `<p><strong>Fahrer:</strong><br>${escapeHtml(driver)}</p>` : ''}
+            <p><strong>Abholort:</strong><br>${escapeHtml(pickup)}</p>
+            <p><strong>Ziel:</strong><br>${escapeHtml(destination)}</p>
+        `;
+        activeOrderBox.style.display = 'block';
+        return;
+    }
+
+    activeOrderTitle.innerText = '🚕 Auftrag eingegangen';
+    activeOrderText.innerHTML = `
+        <p>Deine Anfrage ist bei unserer Leitstelle eingegangen.</p>
+        <p>Wir informieren dich, sobald ein Fahrer unterwegs ist.</p>
+        <p><strong>Abholort:</strong><br>${escapeHtml(pickup)}</p>
+        <p><strong>Ziel:</strong><br>${escapeHtml(destination)}</p>
+    `;
+    activeOrderBox.style.display = 'block';
+}
+
+function renderDriverState(result) {
+    resetBoxes();
+
+    if (result?.hasActiveOrder && result.activeOrder) {
+        renderActiveOrder(result.activeOrder);
+        return;
+    }
+
+    if (result?.driversOnline === true) {
         formBox.style.display = 'block';
         setTimeout(() => pickupInput.focus(), 50);
         return;
     }
 
-    formBox.style.display = 'none';
     offlineBox.style.display = 'block';
 }
 
@@ -62,18 +113,17 @@ async function checkDrivers() {
     const result = await nui('checkTaxiDrivers');
 
     if (!result || !result.ok) {
-        renderDriverState(false);
+        renderDriverState({ driversOnline: false });
         return;
     }
 
-    renderDriverState(result.driversOnline === true);
+    renderDriverState(result);
 }
 
 function startDriverCheck() {
     stopDriverCheck();
+    resetBoxes();
     loadingBox.style.display = 'block';
-    formBox.style.display = 'none';
-    offlineBox.style.display = 'none';
 
     checkDrivers();
 
@@ -132,14 +182,28 @@ async function submitOrder() {
 
     if (!result || !result.ok) {
         setMessage(result?.message || 'Auftrag konnte nicht erstellt werden.', 'error');
-        await checkDrivers();
+
+        if (result?.hasActiveOrder && result.activeOrder) {
+            renderActiveOrder(result.activeOrder);
+        }
+        else {
+            await checkDrivers();
+        }
+
         return;
     }
 
     pickupInput.value = '';
     destinationInput.value = '';
     notesInput.value = '';
+
+    if (result.hasActiveOrder && result.activeOrder) {
+        renderActiveOrder(result.activeOrder);
+        return;
+    }
+
     setMessage(result.message || 'Deine Anfrage wurde erfolgreich an die Leitstelle übermittelt.', 'ok');
+    await checkDrivers();
 }
 
 window.addEventListener('message', (event) => {
@@ -169,4 +233,3 @@ if (phoneMode) {
 } else {
     hideApp();
 }
-
