@@ -39,7 +39,7 @@ local function registerPhoneApp()
         size = 512,
         images = {},
         icon = 'https://cdn-icons-png.flaticon.com/512/3097/3097180.png',
-        ui = 'lst_phone_taxi/html/phone.html'
+        ui = 'nui://lst_phone_taxi/html/phone.html'
     }
 
     local ok, result = pcall(function()
