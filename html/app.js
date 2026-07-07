@@ -53,6 +53,9 @@ const activeOrderText = document.getElementById('activeOrderText');
 let driverCheckTimer = null;
 let driverCheckInterval = 10000;
 let currentRenderKey = '';
+let completedSeenTimer = null;
+let completedSeenJobId = null;
+const COMPLETED_VISIBLE_MS = 30000;
 
 function setMessage(text, type = '') {
     messageBox.className = type;
@@ -72,6 +75,29 @@ function isTypingInForm() {
     return document.activeElement === pickupInput ||
         document.activeElement === destinationInput ||
         document.activeElement === notesInput;
+}
+
+function clearCompletedSeenTimer() {
+    if (completedSeenTimer) {
+        clearTimeout(completedSeenTimer);
+        completedSeenTimer = null;
+    }
+}
+
+function scheduleCompletedSeen(order) {
+    if (!order?.id) return;
+    if (completedSeenJobId === order.id && completedSeenTimer) return;
+
+    clearCompletedSeenTimer();
+    completedSeenJobId = order.id;
+
+    completedSeenTimer = setTimeout(async () => {
+        await nui('markCompletedSeen', { jobId: order.id });
+        completedSeenTimer = null;
+        completedSeenJobId = null;
+        currentRenderKey = '';
+        await checkDrivers(true);
+    }, COMPLETED_VISIBLE_MS);
 }
 
 function makeOrderKey(prefix, order) {
@@ -119,14 +145,17 @@ function renderCompletedOrder(order) {
     activeOrderTitle.innerText = '✅ Fahrt abgeschlossen';
     activeOrderText.innerHTML = `
         <p>Vielen Dank für deine Fahrt!</p>
+        <p>Diese Meldung verschwindet automatisch nach 30 Sekunden.</p>
         ${driver ? `<p><strong>Fahrer:</strong><br>${escapeHtml(driver)}</p>` : ''}
         <p><strong>Abholort:</strong><br>${escapeHtml(pickup)}</p>
         <p><strong>Ziel:</strong><br>${escapeHtml(destination)}</p>
     `;
     activeOrderBox.style.display = 'block';
+    scheduleCompletedSeen(order);
 }
 
 function renderActiveOrder(order) {
+    clearCompletedSeenTimer();
     resetBoxes();
 
     const status = order?.job_status || 'Offen';
@@ -174,6 +203,8 @@ function renderDriverState(result, force = false) {
         renderCompletedOrder(result.completedOrder);
         return;
     }
+
+    clearCompletedSeenTimer();
 
     if (result?.hasActiveOrder && result.activeOrder) {
         renderActiveOrder(result.activeOrder);
@@ -229,6 +260,7 @@ function showApp(checkInterval = 10000) {
 function hideApp() {
     document.body.classList.remove('visible');
     stopDriverCheck();
+    clearCompletedSeenTimer();
 }
 
 async function closeApp() {
