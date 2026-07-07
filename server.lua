@@ -39,6 +39,14 @@ local function postgrestIn(values)
     return 'in.(' .. table.concat(encoded, ',') .. ')'
 end
 
+local function isoUtc(secondsAgo)
+    return os.date('!%Y-%m-%dT%H:%M:%SZ', os.time() - (secondsAgo or 0))
+end
+
+local function completedVisibleSeconds()
+    return (Config.CompletedStatusVisibleMinutes or 5) * 60
+end
+
 local function isSupabaseConfigured()
     return Config.SupabaseUrl
         and Config.SupabaseAnonKey
@@ -133,7 +141,7 @@ local function getActiveTaxiOrder(identifier, cb)
 
     local url = Config.SupabaseUrl
         .. '/rest/v1/taxi_jobs'
-        .. '?select=id,job_status,pickup_location,destination,assigned_driver,created_at,phone_status'
+        .. '?select=id,job_status,pickup_location,destination,assigned_driver,created_at,completed_at,phone_status'
         .. '&customer_identifier=eq.' .. urlEncode(identifier)
         .. '&job_status=' .. postgrestIn(ACTIVE_JOB_STATUSES)
         .. '&order=created_at.desc'
@@ -150,6 +158,43 @@ local function getActiveTaxiOrder(identifier, cb)
 
         if not ok or type(rows) ~= 'table' then
             debugPrint('Active order decode failed', responseText or '')
+            cb(nil)
+            return
+        end
+
+        cb(rows[1])
+    end, 'GET', '', supabaseHeaders())
+end
+
+local function getRecentCompletedTaxiOrder(identifier, cb)
+    if not isSupabaseConfigured() then
+        cb(nil)
+        return
+    end
+
+    local completedSince = isoUtc(completedVisibleSeconds())
+
+    local url = Config.SupabaseUrl
+        .. '/rest/v1/taxi_jobs'
+        .. '?select=id,job_status,pickup_location,destination,assigned_driver,created_at,completed_at,phone_status'
+        .. '&customer_identifier=eq.' .. urlEncode(identifier)
+        .. '&job_status=eq.Erledigt'
+        .. '&phone_status=eq.completed'
+        .. '&completed_at=gte.' .. urlEncode(completedSince)
+        .. '&order=completed_at.desc'
+        .. '&limit=1'
+
+    PerformHttpRequest(url, function(statusCode, responseText)
+        if statusCode < 200 or statusCode >= 300 then
+            debugPrint('Completed order check failed', statusCode, responseText or '')
+            cb(nil)
+            return
+        end
+
+        local ok, rows = pcall(json.decode, responseText or '[]')
+
+        if not ok or type(rows) ~= 'table' then
+            debugPrint('Completed order decode failed', responseText or '')
             cb(nil)
             return
         end
@@ -201,12 +246,26 @@ ESX.RegisterServerCallback('lst_phone_taxi:canOrderTaxi', function(source, cb)
             return
         end
 
-        checkDriversOnline(function(driversOnline)
-            cb({
-                ok = true,
-                driversOnline = driversOnline,
-                hasActiveOrder = false
-            })
+        getRecentCompletedTaxiOrder(identifier, function(completedOrder)
+            if completedOrder then
+                cb({
+                    ok = true,
+                    driversOnline = false,
+                    hasActiveOrder = false,
+                    hasCompletedOrder = true,
+                    completedOrder = completedOrder
+                })
+                return
+            end
+
+            checkDriversOnline(function(driversOnline)
+                cb({
+                    ok = true,
+                    driversOnline = driversOnline,
+                    hasActiveOrder = false,
+                    hasCompletedOrder = false
+                })
+            end)
         end)
     end)
 end)
