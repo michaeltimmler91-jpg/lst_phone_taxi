@@ -1,6 +1,7 @@
 local ESX = exports['es_extended']:getSharedObject()
 local appOpen = false
 local phoneAppRegistered = false
+local registerThreadRunning = false
 
 local function openTaxiApp()
     if appOpen then return end
@@ -17,8 +18,8 @@ local function closeTaxiApp()
 end
 
 local function registerPhoneApp()
-    if phoneAppRegistered then return end
-    if GetResourceState('lb-phone') ~= 'started' then return end
+    if phoneAppRegistered then return true end
+    if GetResourceState('lb-phone') ~= 'started' then return false end
 
     local appData = {
         identifier = 'TaxiRuf',
@@ -40,9 +41,36 @@ local function registerPhoneApp()
     if ok then
         phoneAppRegistered = true
         print('[lst_phone_taxi] Taxi-Ruf App im lb-phone registriert')
-    else
-        print('[lst_phone_taxi] lb-phone App konnte nicht registriert werden:', result)
+        return true
     end
+
+    print('[lst_phone_taxi] lb-phone App noch nicht bereit:', result)
+    return false
+end
+
+local function startRegisterThread()
+    if registerThreadRunning then return end
+    registerThreadRunning = true
+
+    CreateThread(function()
+        while GetResourceState('lb-phone') ~= 'started' do
+            Wait(1000)
+        end
+
+        Wait(Config.PhoneRegisterDelayMs or 8000)
+
+        for _ = 1, 30 do
+            if registerPhoneApp() then
+                registerThreadRunning = false
+                return
+            end
+
+            Wait(2000)
+        end
+
+        registerThreadRunning = false
+        print('[lst_phone_taxi] Taxi-Ruf App konnte nach mehreren Versuchen nicht registriert werden')
+    end)
 end
 
 RegisterCommand(Config.OpenCommand or 'taxiapp', function()
@@ -82,18 +110,12 @@ CreateThread(function()
     Wait(1000)
     SetNuiFocus(false, false)
     SendNUIMessage({ action = 'close' })
-
-    for _ = 1, 20 do
-        registerPhoneApp()
-        if phoneAppRegistered then break end
-        Wait(1000)
-    end
+    startRegisterThread()
 end)
 
 AddEventHandler('onResourceStart', function(resourceName)
     if resourceName == 'lb-phone' or resourceName == GetCurrentResourceName() then
-        Wait(1500)
         phoneAppRegistered = false
-        registerPhoneApp()
+        startRegisterThread()
     end
 end)
