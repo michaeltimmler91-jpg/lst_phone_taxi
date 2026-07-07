@@ -1,5 +1,6 @@
 local ESX = exports['es_extended']:getSharedObject()
 local appOpen = false
+local phoneAppRegistered = false
 
 local function openTaxiApp()
     if appOpen then return end
@@ -22,6 +23,35 @@ local function closeTaxiApp()
     SendNUIMessage({
         action = 'close'
     })
+end
+
+local function registerPhoneApp()
+    if phoneAppRegistered then return end
+    if GetResourceState('lb-phone') ~= 'started' then return end
+
+    local appData = {
+        identifier = 'TaxiRuf',
+        name = 'Taxi-Ruf',
+        description = 'Taxi rufen',
+        developer = 'Los Santos Taxi',
+        defaultApp = true,
+        removable = false,
+        size = 512,
+        images = {},
+        icon = 'https://cdn-icons-png.flaticon.com/512/3097/3097180.png',
+        ui = 'lst_phone_taxi/html/phone.html'
+    }
+
+    local ok, result = pcall(function()
+        return exports['lb-phone']:AddCustomApp(appData)
+    end)
+
+    if ok then
+        phoneAppRegistered = true
+        print('[lst_phone_taxi] Taxi-Ruf App im lb-phone registriert')
+    else
+        print('[lst_phone_taxi] lb-phone App konnte nicht registriert werden:', result)
+    end
 end
 
 RegisterCommand(Config.OpenCommand or 'taxiapp', function()
@@ -76,4 +106,22 @@ CreateThread(function()
     Wait(1000)
     SetNuiFocus(false, false)
     SendNUIMessage({ action = 'close' })
+
+    for _ = 1, 20 do
+        registerPhoneApp()
+
+        if phoneAppRegistered then
+            break
+        end
+
+        Wait(1000)
+    end
+end)
+
+AddEventHandler('onResourceStart', function(resourceName)
+    if resourceName == 'lb-phone' or resourceName == GetCurrentResourceName() then
+        Wait(1500)
+        phoneAppRegistered = false
+        registerPhoneApp()
+    end
 end)
