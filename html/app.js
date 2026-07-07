@@ -40,6 +40,7 @@ const activeOrderText = document.getElementById('activeOrderText');
 
 let driverCheckTimer = null;
 let driverCheckInterval = 10000;
+let currentRenderKey = '';
 
 function setMessage(text, type = '') {
     messageBox.className = type;
@@ -53,6 +54,33 @@ function escapeHtml(value) {
         .replaceAll('>', '&gt;')
         .replaceAll('"', '&quot;')
         .replaceAll("'", '&#039;');
+}
+
+function isTypingInForm() {
+    return document.activeElement === pickupInput ||
+        document.activeElement === destinationInput ||
+        document.activeElement === notesInput;
+}
+
+function makeRenderKey(result) {
+    if (result?.hasActiveOrder && result.activeOrder) {
+        const order = result.activeOrder;
+
+        return [
+            'active',
+            order.id || '',
+            order.job_status || '',
+            order.assigned_driver || '',
+            order.pickup_location || '',
+            order.destination || ''
+        ].join('|');
+    }
+
+    if (result?.driversOnline === true) {
+        return 'form';
+    }
+
+    return 'offline';
 }
 
 function resetBoxes() {
@@ -92,7 +120,18 @@ function renderActiveOrder(order) {
     activeOrderBox.style.display = 'block';
 }
 
-function renderDriverState(result) {
+function renderDriverState(result, force = false) {
+    const nextRenderKey = makeRenderKey(result);
+
+    if (!force && nextRenderKey === currentRenderKey) {
+        return;
+    }
+
+    if (!force && isTypingInForm() && currentRenderKey === 'form' && nextRenderKey === 'form') {
+        return;
+    }
+
+    currentRenderKey = nextRenderKey;
     resetBoxes();
 
     if (result?.hasActiveOrder && result.activeOrder) {
@@ -102,33 +141,33 @@ function renderDriverState(result) {
 
     if (result?.driversOnline === true) {
         formBox.style.display = 'block';
-        setTimeout(() => pickupInput.focus(), 50);
         return;
     }
 
     offlineBox.style.display = 'block';
 }
 
-async function checkDrivers() {
+async function checkDrivers(force = false) {
     const result = await nui('checkTaxiDrivers');
 
     if (!result || !result.ok) {
-        renderDriverState({ driversOnline: false });
+        renderDriverState({ driversOnline: false }, force);
         return;
     }
 
-    renderDriverState(result);
+    renderDriverState(result, force);
 }
 
 function startDriverCheck() {
     stopDriverCheck();
+    currentRenderKey = '';
     resetBoxes();
     loadingBox.style.display = 'block';
 
-    checkDrivers();
+    checkDrivers(true);
 
     driverCheckTimer = setInterval(() => {
-        checkDrivers();
+        checkDrivers(false);
     }, driverCheckInterval);
 }
 
@@ -185,9 +224,10 @@ async function submitOrder() {
 
         if (result?.hasActiveOrder && result.activeOrder) {
             renderActiveOrder(result.activeOrder);
+            currentRenderKey = makeRenderKey(result);
         }
         else {
-            await checkDrivers();
+            await checkDrivers(true);
         }
 
         return;
@@ -198,12 +238,12 @@ async function submitOrder() {
     notesInput.value = '';
 
     if (result.hasActiveOrder && result.activeOrder) {
-        renderActiveOrder(result.activeOrder);
+        renderDriverState(result, true);
         return;
     }
 
     setMessage(result.message || 'Deine Anfrage wurde erfolgreich an die Leitstelle übermittelt.', 'ok');
-    await checkDrivers();
+    await checkDrivers(true);
 }
 
 window.addEventListener('message', (event) => {
