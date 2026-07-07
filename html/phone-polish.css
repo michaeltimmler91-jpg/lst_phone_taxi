@@ -7,7 +7,7 @@ body.phone-mode.visible {
 }
 
 body.phone-mode .app {
-    padding: 38px 14px 30px;
+    padding: 58px 14px 30px;
     transform: translateZ(0);
     backface-visibility: hidden;
 }
