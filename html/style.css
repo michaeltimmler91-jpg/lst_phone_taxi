@@ -149,18 +149,6 @@ button {
     background: rgba(250, 204, 21, 0.08);
 }
 
-button:disabled {
-    opacity: 0.65;
-    cursor: not-allowed;
-}
-
-.hint-card {
-    color: #fde68a;
-    line-height: 1.45;
-    border-color: rgba(250, 204, 21, 0.28);
-    background: rgba(250, 204, 21, 0.08);
-}
-
 .offline-card {
     color: #fecaca;
     line-height: 1.45;
@@ -168,6 +156,29 @@ button:disabled {
     font-weight: 800;
     border-color: rgba(248, 113, 113, 0.35);
     background: rgba(127, 29, 29, 0.28);
+}
+
+.active-order-card {
+    color: #e0f2fe;
+    line-height: 1.45;
+    border-color: rgba(56, 189, 248, 0.35);
+    background: rgba(14, 116, 144, 0.18);
+}
+
+.active-order-card strong {
+    display: block;
+    margin-bottom: 12px;
+    color: #bae6fd;
+    font-size: 18px;
+}
+
+.active-order-text p {
+    margin: 0 0 12px;
+    color: #dbeafe;
+}
+
+.active-order-text p:last-child {
+    margin-bottom: 0;
 }
 
 button:disabled {
