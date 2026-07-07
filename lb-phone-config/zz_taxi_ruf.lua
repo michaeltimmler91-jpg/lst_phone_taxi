@@ -1,16 +1,18 @@
--- Datei nach lb-phone/config/zz_taxi_ruf.lua kopieren.
--- Nicht direkt in die große config.lua einfügen.
+-- Taxi-Ruf fuer lb-phone 2.3.7
+-- Diese Datei nach lb-phone/config/zz_taxi_ruf.lua kopieren.
+-- Wichtig: keine ui/iframe-Einbindung. Die App startet nur die funktionierende lst_phone_taxi-NUI.
 
 Config.CustomApps = Config.CustomApps or {}
 
-Config.CustomApps["taxi_ruf"] = {
-    name = "taxi_ruf",
-    label = "Taxi-Ruf",
+Config.CustomApps["TaxiRuf"] = {
+    name = "Taxi-Ruf",
     description = "Taxi rufen",
     icon = "https://cdn-icons-png.flaticon.com/512/3097/3097180.png",
-    developer = "Los Santos Taxi",
-    size = 120,
-    ui = "nui://lst_phone_taxi/html/index.html?phone=1",
-    keepOpen = true,
-    defaultApp = true
+    size = 512,
+    removable = false,
+    defaultApp = true,
+
+    onUse = function()
+        ExecuteCommand("taxiapp")
+    end
 }
