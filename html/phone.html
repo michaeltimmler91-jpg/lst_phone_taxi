@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Taxi-Ruf</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body class="phone-ui">
+    <main class="app">
+        <section class="hero">
+            <div class="icon">🚕</div>
+            <div>
+                <h1>Taxi-Ruf</h1>
+                <p>Los Santos Taxi</p>
+            </div>
+        </section>
+
+        <section id="loadingBox" class="card hint-card">
+            Taxistatus wird geprüft...
+        </section>
+
+        <section id="activeOrderBox" class="card active-order-card" style="display:none;">
+            <strong id="activeOrderTitle">🚕 Auftrag eingegangen</strong>
+            <div id="activeOrderText" class="active-order-text"></div>
+        </section>
+
+        <section id="offlineBox" class="card offline-card" style="display:none;">
+            Aktuell ist leider kein Taxifahrer im Dienst.
+        </section>
+
+        <section id="formBox" style="display:none;">
+            <section class="card hint-card">
+                Bitte gib eine möglichst genaue PLZ oder einen Ort an.
+                So können wir dich schneller finden.
+            </section>
+
+            <section class="card">
+                <label for="pickup">Abholort / PLZ *</label>
+                <input id="pickup" type="text" placeholder="z.B. PLZ 1012 / Pillbox">
+
+                <label for="destination">Ziel</label>
+                <input id="destination" type="text" placeholder="z.B. Flughafen / PLZ 9050">
+
+                <label for="notes">Notiz</label>
+                <textarea id="notes" rows="4" placeholder="z.B. 2 Personen, großes Gepäck"></textarea>
+
+                <button id="submitBtn">Taxi rufen</button>
+                <div id="message"></div>
+            </section>
+        </section>
+    </main>
+
+    <button id="closeBtn" style="display:none;">Schließen</button>
+    <script src="app.js"></script>
+</body>
+</html>
