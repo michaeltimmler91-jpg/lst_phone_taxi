@@ -44,7 +44,7 @@ local function isoUtc(secondsAgo)
 end
 
 local function completedVisibleSeconds()
-    return (Config.CompletedStatusVisibleMinutes or 5) * 60
+    return (Config.CompletedStatusVisibleSeconds or 30)
 end
 
 local function isSupabaseConfigured()
@@ -203,6 +203,31 @@ local function getRecentCompletedTaxiOrder(identifier, cb)
     end, 'GET', '', supabaseHeaders())
 end
 
+local function markCompletedSeen(jobId, identifier, cb)
+    if not isSupabaseConfigured() then
+        cb(false)
+        return
+    end
+
+    local url = Config.SupabaseUrl
+        .. '/rest/v1/taxi_jobs'
+        .. '?id=eq.' .. urlEncode(jobId)
+        .. '&customer_identifier=eq.' .. urlEncode(identifier)
+        .. '&phone_status=eq.completed'
+
+    PerformHttpRequest(url, function(statusCode, responseText)
+        if statusCode < 200 or statusCode >= 300 then
+            debugPrint('Mark completed seen failed', statusCode, responseText or '')
+            cb(false)
+            return
+        end
+
+        cb(true)
+    end, 'PATCH', json.encode({ phone_status = 'completed_seen' }), supabaseHeaders({
+        ['Prefer'] = 'return=minimal'
+    }))
+end
+
 local function sendToWorker(payload, cb)
     local headers = {
         ['Content-Type'] = 'application/json'
@@ -267,6 +292,20 @@ ESX.RegisterServerCallback('lst_phone_taxi:canOrderTaxi', function(source, cb)
                 })
             end)
         end)
+    end)
+end)
+
+ESX.RegisterServerCallback('lst_phone_taxi:markCompletedSeen', function(source, cb, jobId)
+    local xPlayer = ESX.GetPlayerFromId(source)
+    local identifier = getIdentifier(source, xPlayer)
+
+    if not jobId then
+        cb({ ok = false })
+        return
+    end
+
+    markCompletedSeen(jobId, identifier, function(success)
+        cb({ ok = success })
     end)
 end)
 
