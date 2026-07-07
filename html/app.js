@@ -170,6 +170,13 @@ function resetBoxes() {
     activeOrderBox.className = 'card active-order-card';
 }
 
+function showStatusCard() {
+    activeOrderBox.style.display = 'block';
+    activeOrderBox.classList.remove('status-enter');
+    void activeOrderBox.offsetWidth;
+    activeOrderBox.classList.add('status-enter');
+}
+
 function renderCompletedOrder(order) {
     resetBoxes();
 
@@ -177,12 +184,13 @@ function renderCompletedOrder(order) {
     activeOrderTitle.innerHTML = '<span class="status-badge completed-badge">✅</span><span>Fahrt abgeschlossen</span>';
     activeOrderText.innerHTML = `
         <div class="status-copy">
-            <p class="status-main">Vielen Dank für deine Fahrt!</p>
-            <p class="status-sub">Du kannst gleich wieder ein Taxi rufen. Diese Meldung verschwindet automatisch nach 30 Sekunden.</p>
+            <p class="status-main">Vielen Dank für deine Fahrt! ❤️</p>
+            <p class="status-sub">Wir hoffen, du bist gut angekommen.</p>
+            <p class="status-sub">Diese Meldung verschwindet automatisch nach 30 Sekunden.</p>
         </div>
         ${orderDetailsHtml(order, true)}
     `;
-    activeOrderBox.style.display = 'block';
+    showStatusCard();
     scheduleCompletedSeen(order);
 }
 
@@ -191,18 +199,19 @@ function renderActiveOrder(order) {
     resetBoxes();
 
     const status = order?.job_status || 'Offen';
+    const driver = order?.assigned_driver || '';
 
     if (status === 'Übernommen' || status === 'Unterwegs' || status === 'Fahrer angekommen') {
         activeOrderBox.classList.add('driver-card');
         activeOrderTitle.innerHTML = '<span class="status-badge driver-badge">🚖</span><span>Fahrer unterwegs</span>';
         activeOrderText.innerHTML = `
             <div class="status-copy">
-                <p class="status-main">Dein Taxi ist unterwegs.</p>
-                <p class="status-sub">Bitte bleib am angegebenen Abholort.</p>
+                <p class="status-main">${driver ? `${escapeHtml(driver)} wurde deinem Auftrag zugewiesen.` : 'Ein Fahrer wurde deinem Auftrag zugewiesen.'}</p>
+                <p class="status-sub">Bitte bleibe am angegebenen Abholort.</p>
             </div>
             ${orderDetailsHtml(order, true)}
         `;
-        activeOrderBox.style.display = 'block';
+        showStatusCard();
         return;
     }
 
@@ -210,12 +219,12 @@ function renderActiveOrder(order) {
     activeOrderTitle.innerHTML = '<span class="status-badge received-badge">📨</span><span>Auftrag eingegangen</span>';
     activeOrderText.innerHTML = `
         <div class="status-copy">
-            <p class="status-main">Deine Anfrage ist bei unserer Leitstelle eingegangen.</p>
-            <p class="status-sub">Wir informieren dich, sobald ein Fahrer unterwegs ist.</p>
+            <p class="status-main">Deine Anfrage wurde erfolgreich an unsere Leitstelle übermittelt.</p>
+            <p class="status-sub">Wir informieren dich, sobald ein Fahrer deinen Auftrag übernimmt.</p>
         </div>
         ${orderDetailsHtml(order, false)}
     `;
-    activeOrderBox.style.display = 'block';
+    showStatusCard();
 }
 
 function renderDriverState(result, force = false) {
