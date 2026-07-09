@@ -8,9 +8,16 @@ body.phone-mode.visible {
 }
 
 body.phone-mode .app {
+    width: 100vw;
+    height: 100vh;
+    max-width: none;
+    max-height: none;
     padding: 54px 16px 34px;
-    transform: translateZ(0);
-    backface-visibility: hidden;
+    border-radius: 0;
+    box-shadow: none;
+    transform: none;
+    backface-visibility: visible;
+    will-change: auto;
 }
 
 body.phone-mode .hero {
