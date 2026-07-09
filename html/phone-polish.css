@@ -1,70 +1,101 @@
 body.phone-mode,
 body.phone-mode.visible {
     background: radial-gradient(circle at top, #111827 0%, #020617 55%, #000814 100%);
-    -webkit-font-smoothing: subpixel-antialiased;
-    text-rendering: geometricPrecision;
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
     font-family: Arial, Helvetica, sans-serif;
+    font-size: 18px;
 }
 
 body.phone-mode .app {
-    padding: 58px 14px 30px;
+    padding: 54px 16px 34px;
     transform: translateZ(0);
     backface-visibility: hidden;
 }
 
 body.phone-mode .hero {
-    padding: 8px 4px 18px;
-    gap: 10px;
+    padding: 10px 4px 20px;
+    gap: 12px;
 }
 
 body.phone-mode .icon {
-    width: 42px;
-    height: 42px;
-    border-radius: 13px;
-    font-size: 23px;
+    width: 46px;
+    height: 46px;
+    border-radius: 14px;
+    font-size: 25px;
 }
 
 body.phone-mode h1 {
-    font-size: 23px;
-    line-height: 1.05;
+    font-size: 26px;
+    line-height: 1.08;
     font-weight: 900;
     letter-spacing: -0.02em;
 }
 
 body.phone-mode .hero p {
-    color: #cbd5e1;
-    font-size: 13px;
+    color: #dbeafe;
+    font-size: 15px;
+    line-height: 1.35;
     font-weight: 800;
 }
 
 body.phone-mode p {
-    font-weight: 700;
+    font-size: 16px;
+    line-height: 1.45;
+    font-weight: 800;
 }
 
 body.phone-mode .card {
-    border-radius: 18px;
-    padding: 12px;
-    margin-bottom: 12px;
+    border-radius: 20px;
+    padding: 15px;
+    margin-bottom: 14px;
 }
 
-body.phone-mode .hint-card {
-    padding: 11px 12px;
-    line-height: 1.35;
+body.phone-mode .hint-card,
+body.phone-mode .offline-card {
+    padding: 14px 15px;
+    font-size: 16px;
+    line-height: 1.5;
+    font-weight: 850;
+}
+
+body.phone-mode label {
+    font-size: 15.5px;
+    line-height: 1.3;
+    font-weight: 900;
+    margin-bottom: 9px;
 }
 
 body.phone-mode input,
 body.phone-mode textarea {
-    padding: 14px 14px;
-    border-radius: 13px;
+    padding: 16px 15px;
+    border-radius: 15px;
+    font-size: 17px;
+    line-height: 1.3;
+    font-weight: 800;
+}
+
+body.phone-mode textarea {
+    min-height: 92px;
 }
 
 body.phone-mode button {
-    min-height: 48px;
-    border-radius: 14px;
+    min-height: 54px;
+    border-radius: 16px;
+    font-size: 17px;
+    line-height: 1.25;
+    font-weight: 950;
+    padding: 15px 14px;
+}
+
+body.phone-mode #message {
+    font-size: 16px;
+    line-height: 1.45;
+    font-weight: 850;
 }
 
 .active-order-card {
-    line-height: 1.42;
+    line-height: 1.48;
     background: linear-gradient(180deg, rgba(8, 47, 73, 0.90), rgba(15, 23, 42, 0.92));
 }
 
@@ -85,23 +116,23 @@ body.phone-mode button {
 #activeOrderTitle {
     display: flex;
     align-items: center;
-    gap: 9px;
-    margin-bottom: 10px;
+    gap: 10px;
+    margin-bottom: 12px;
     color: #f8fafc;
-    font-size: 17px;
-    font-weight: 900;
-    line-height: 1.15;
+    font-size: 20px;
+    font-weight: 950;
+    line-height: 1.18;
     letter-spacing: -0.01em;
 }
 
 .status-badge {
-    width: 28px;
-    height: 28px;
+    width: 31px;
+    height: 31px;
     display: inline-flex;
     align-items: center;
     justify-content: center;
     border-radius: 999px;
-    font-size: 15px;
+    font-size: 17px;
     flex: 0 0 auto;
 }
 
@@ -110,9 +141,9 @@ body.phone-mode button {
 .completed-badge { background: rgba(34, 197, 94, 0.18); }
 
 .status-copy {
-    padding: 10px 11px;
-    margin-bottom: 9px;
-    border-radius: 14px;
+    padding: 13px 13px;
+    margin-bottom: 11px;
+    border-radius: 15px;
     background: rgba(2, 6, 23, 0.36);
     border: 1px solid rgba(148, 163, 184, 0.12);
 }
@@ -120,45 +151,45 @@ body.phone-mode button {
 .status-main {
     margin: 0;
     color: #ffffff;
-    font-size: 14.5px;
-    font-weight: 900;
-    line-height: 1.4;
+    font-size: 17px;
+    font-weight: 950;
+    line-height: 1.45;
 }
 
 .status-sub {
-    margin: 5px 0 0;
-    color: #cbd5e1;
-    font-size: 13px;
-    font-weight: 800;
-    line-height: 1.4;
+    margin: 6px 0 0;
+    color: #dbeafe;
+    font-size: 15.5px;
+    font-weight: 850;
+    line-height: 1.45;
 }
 
 .details-list {
     display: flex;
     flex-direction: column;
-    gap: 7px;
+    gap: 9px;
 }
 
 .detail-row {
     display: flex;
     align-items: center;
-    gap: 10px;
-    min-height: 52px;
-    padding: 9px 11px;
-    border-radius: 14px;
+    gap: 11px;
+    min-height: 60px;
+    padding: 11px 12px;
+    border-radius: 16px;
     background: rgba(15, 23, 42, 0.74);
     border: 1px solid rgba(148, 163, 184, 0.13);
 }
 
 .detail-icon {
-    width: 26px;
-    height: 26px;
+    width: 30px;
+    height: 30px;
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    border-radius: 9px;
+    border-radius: 10px;
     background: rgba(250, 204, 21, 0.12);
-    font-size: 15px;
+    font-size: 17px;
     flex: 0 0 auto;
 }
 
@@ -169,20 +200,20 @@ body.phone-mode button {
 
 .detail-label {
     display: block;
-    color: #cbd5e1;
-    font-size: 11.5px;
-    font-weight: 900;
+    color: #dbeafe;
+    font-size: 13px;
+    font-weight: 950;
     text-transform: uppercase;
     letter-spacing: 0.04em;
-    margin-bottom: 2px;
+    margin-bottom: 3px;
 }
 
 .detail-value {
     display: block;
     color: #ffffff;
-    font-size: 15px;
-    font-weight: 900;
-    line-height: 1.2;
+    font-size: 17.5px;
+    font-weight: 950;
+    line-height: 1.25;
     word-break: break-word;
 }
 
@@ -199,12 +230,4 @@ body.phone-mode button {
         opacity: 1;
         transform: translateY(0);
     }
-}
-
-body.phone-mode input,
-body.phone-mode textarea,
-body.phone-mode button {
-    font-size: 16px;
-    font-weight: 800;
-    -webkit-font-smoothing: subpixel-antialiased;
 }
