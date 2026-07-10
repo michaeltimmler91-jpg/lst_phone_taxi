@@ -41,7 +41,7 @@ local function registerFoodApp()
         size = 512,
         images = {},
         icon = 'https://cfx-nui-lst_phone_taxi/html/icon.png',
-        ui = 'lst_food_taxi/html/index.html?v=1'
+        ui = 'lst_food_taxi/html/index.html?v=2'
     }
 
     local ok, result = pcall(function()
@@ -100,6 +100,12 @@ RegisterNUICallback('createFoodDelivery', function(data, cb)
     ESX.TriggerServerCallback('lst_food_taxi:createDelivery', function(result)
         cb(result or { ok = false, message = 'Lieferauftrag konnte nicht erstellt werden.' })
     end, data or {})
+end)
+
+RegisterNUICallback('getFoodDeliveryHistory', function(_, cb)
+    ESX.TriggerServerCallback('lst_food_taxi:getDeliveryHistory', function(result)
+        cb(result or { ok = false, message = 'Aufträge konnten nicht geladen werden.', orders = {} })
+    end)
 end)
 
 RegisterNetEvent('esx:playerLoaded', function(xPlayer)
