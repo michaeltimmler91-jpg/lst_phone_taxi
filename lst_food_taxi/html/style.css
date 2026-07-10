@@ -1,0 +1,188 @@
+* {
+    box-sizing: border-box;
+}
+
+html,
+body {
+    margin: 0;
+    width: 100%;
+    min-height: 100%;
+    font-family: Arial, Helvetica, sans-serif;
+    background: #020617;
+    color: #f8fafc;
+}
+
+body {
+    overflow-y: auto;
+}
+
+.app {
+    width: 100%;
+    min-height: 100vh;
+    padding: 54px 16px 30px;
+    background: radial-gradient(circle at top, #3f1d0b 0%, #111827 42%, #020617 100%);
+}
+
+.hero {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 8px 4px 20px;
+}
+
+.icon {
+    width: 48px;
+    height: 48px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 15px;
+    background: #f97316;
+    font-size: 27px;
+    box-shadow: 0 12px 28px rgba(249, 115, 22, 0.28);
+}
+
+h1 {
+    margin: 0;
+    font-size: 25px;
+    line-height: 1.1;
+}
+
+.hero p {
+    margin: 5px 0 0;
+    color: #fed7aa;
+    font-size: 15px;
+    font-weight: 800;
+}
+
+.card {
+    margin-bottom: 14px;
+    padding: 15px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 18px;
+    background: rgba(15, 23, 42, 0.92);
+    box-shadow: 0 16px 34px rgba(0, 0, 0, 0.28);
+}
+
+.hidden {
+    display: none !important;
+}
+
+.info-card {
+    color: #fde68a;
+    font-weight: 800;
+}
+
+.error-card {
+    color: #fecaca;
+    background: rgba(127, 29, 29, 0.38);
+    border-color: rgba(248, 113, 113, 0.35);
+    font-weight: 850;
+    line-height: 1.45;
+}
+
+.pickup-card {
+    border-left: 5px solid #f97316;
+}
+
+.pickup-card span {
+    display: block;
+    color: #fdba74;
+    font-size: 13px;
+    font-weight: 900;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+.pickup-card strong {
+    display: block;
+    margin-top: 5px;
+    font-size: 18px;
+}
+
+label {
+    display: block;
+    margin: 0 0 8px;
+    color: #e2e8f0;
+    font-size: 15px;
+    font-weight: 900;
+}
+
+input,
+textarea,
+select {
+    width: 100%;
+    margin-bottom: 15px;
+    padding: 15px;
+    border: 1px solid rgba(148, 163, 184, 0.22);
+    border-radius: 14px;
+    background: rgba(2, 6, 23, 0.78);
+    color: #fff;
+    font-size: 16px;
+    font-weight: 750;
+    outline: none;
+}
+
+textarea {
+    resize: none;
+    min-height: 96px;
+}
+
+input:focus,
+textarea:focus,
+select:focus {
+    border-color: #fb923c;
+    box-shadow: 0 0 0 3px rgba(249, 115, 22, 0.14);
+}
+
+.money-input {
+    position: relative;
+}
+
+.money-input input {
+    padding-right: 42px;
+}
+
+.money-input span {
+    position: absolute;
+    top: 15px;
+    right: 16px;
+    color: #fdba74;
+    font-weight: 900;
+}
+
+button {
+    width: 100%;
+    min-height: 54px;
+    padding: 15px;
+    border: 0;
+    border-radius: 15px;
+    background: linear-gradient(135deg, #fb923c, #f97316);
+    color: #1f1308;
+    font-size: 17px;
+    font-weight: 950;
+    cursor: pointer;
+}
+
+button:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+#message {
+    min-height: 22px;
+    margin-top: 13px;
+    text-align: center;
+    color: #cbd5e1;
+    font-size: 15px;
+    font-weight: 800;
+    line-height: 1.4;
+}
+
+#message.ok {
+    color: #86efac;
+}
+
+#message.error {
+    color: #fca5a5;
+}
