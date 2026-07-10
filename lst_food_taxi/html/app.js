@@ -1,15 +1,24 @@
 const loadingCard = document.getElementById('loadingCard');
 const deniedCard = document.getElementById('deniedCard');
-const formArea = document.getElementById('formArea');
+const appArea = document.getElementById('appArea');
 const companyText = document.getElementById('companyText');
 const pickupText = document.getElementById('pickupText');
 const customerNameInput = document.getElementById('customerName');
 const destinationInput = document.getElementById('destination');
 const notesInput = document.getElementById('notes');
 const foodCostInput = document.getElementById('foodCost');
-const paidBySelect = document.getElementById('paidBy');
 const submitBtn = document.getElementById('submitBtn');
 const messageBox = document.getElementById('message');
+const successNotice = document.getElementById('successNotice');
+const newOrderTab = document.getElementById('newOrderTab');
+const historyTab = document.getElementById('historyTab');
+const newOrderPanel = document.getElementById('newOrderPanel');
+const historyPanel = document.getElementById('historyPanel');
+const historyList = document.getElementById('historyList');
+const refreshHistoryBtn = document.getElementById('refreshHistoryBtn');
+
+let successTimer = null;
+let historyTimer = null;
 
 async function nui(event, data = {}) {
     try {
@@ -32,6 +41,15 @@ async function nui(event, data = {}) {
     }
 }
 
+function escapeHtml(value) {
+    return String(value ?? '')
+        .replaceAll('&', '&amp;')
+        .replaceAll('<', '&lt;')
+        .replaceAll('>', '&gt;')
+        .replaceAll('"', '&quot;')
+        .replaceAll("'", '&#039;');
+}
+
 function setMessage(text, type = '') {
     messageBox.textContent = text || '';
     messageBox.className = type;
@@ -39,7 +57,85 @@ function setMessage(text, type = '') {
 
 function setLoading(isLoading) {
     submitBtn.disabled = isLoading;
-    submitBtn.textContent = isLoading ? 'Wird gesendet...' : '🚕 Lieferauftrag senden';
+    submitBtn.textContent = isLoading ? 'Wird gesendet...' : '🚕 Auftrag an Leitstelle senden';
+}
+
+function showSuccessNotice() {
+    clearTimeout(successTimer);
+    successNotice.classList.remove('hidden');
+
+    successTimer = setTimeout(() => {
+        successNotice.classList.add('hidden');
+    }, 10000);
+}
+
+function switchTab(tab) {
+    const showHistory = tab === 'history';
+
+    newOrderTab.classList.toggle('active', !showHistory);
+    historyTab.classList.toggle('active', showHistory);
+    newOrderPanel.classList.toggle('hidden', showHistory);
+    historyPanel.classList.toggle('hidden', !showHistory);
+
+    if (showHistory) {
+        loadOrderHistory();
+    }
+}
+
+function getStatusInfo(job) {
+    if (job.job_status === 'Erledigt') {
+        return { label: 'Abgeschlossen', className: 'status-completed', dot: '🟢' };
+    }
+
+    if (job.assigned_driver) {
+        return { label: 'Fahrer zugeteilt', className: 'status-assigned', dot: '🔵' };
+    }
+
+    return { label: 'Bei Leitstelle', className: 'status-waiting', dot: '🟡' };
+}
+
+function renderHistory(orders) {
+    if (!orders || orders.length === 0) {
+        historyList.innerHTML = '<div class="empty-state">Noch keine Lieferaufträge vorhanden.</div>';
+        return;
+    }
+
+    historyList.innerHTML = orders.map(order => {
+        const status = getStatusInfo(order);
+        const createdAt = order.created_at
+            ? new Date(order.created_at).toLocaleString('de-DE', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })
+            : '-';
+
+        const driverLine = order.assigned_driver
+            ? `<div class="order-meta">🚕 ${escapeHtml(order.assigned_driver)}</div>`
+            : '';
+
+        return `
+            <article class="order-card">
+                <div class="order-card-top">
+                    <strong>${escapeHtml(order.customer_name || 'Unbekannter Kunde')}</strong>
+                    <span class="order-status ${status.className}">${status.dot} ${status.label}</span>
+                </div>
+                <div class="order-destination">📍 ${escapeHtml(order.destination || '-')}</div>
+                <div class="order-meta">💵 ${Number(order.food_cost || 0)} $</div>
+                ${driverLine}
+                <div class="order-time">${createdAt}</div>
+            </article>
+        `;
+    }).join('');
+}
+
+async function loadOrderHistory() {
+    historyList.innerHTML = '<div class="empty-state">Aufträge werden geladen...</div>';
+
+    const result = await nui('getFoodDeliveryHistory');
+
+    if (!result || !result.ok) {
+        historyList.innerHTML = `<div class="empty-state error-text">${escapeHtml(result?.message || 'Aufträge konnten nicht geladen werden.')}</div>`;
+        return;
+    }
+
+    renderHistory(result.orders || []);
 }
 
 async function loadBusinessData() {
@@ -54,7 +150,14 @@ async function loadBusinessData() {
 
     companyText.textContent = result.company || 'Essensgewerbe';
     pickupText.textContent = result.pickup || result.company || '-';
-    formArea.classList.remove('hidden');
+    appArea.classList.remove('hidden');
+
+    clearInterval(historyTimer);
+    historyTimer = setInterval(() => {
+        if (!historyPanel.classList.contains('hidden')) {
+            loadOrderHistory();
+        }
+    }, 10000);
 }
 
 submitBtn.addEventListener('click', async () => {
@@ -62,7 +165,6 @@ submitBtn.addEventListener('click', async () => {
     const destination = destinationInput.value.trim();
     const notes = notesInput.value.trim();
     const foodCost = Number(foodCostInput.value || 0);
-    const paidBy = paidBySelect.value;
 
     if (!customerName) {
         setMessage('Bitte Kundenname eintragen.', 'error');
@@ -83,8 +185,7 @@ submitBtn.addEventListener('click', async () => {
         customer_name: customerName,
         destination,
         notes,
-        food_cost: foodCost,
-        food_paid_by: paidBy
+        food_cost: foodCost
     });
 
     setLoading(false);
@@ -94,12 +195,16 @@ submitBtn.addEventListener('click', async () => {
         return;
     }
 
-    setMessage(result.message || 'Lieferauftrag wurde gesendet.', 'ok');
+    setMessage('');
+    showSuccessNotice();
     customerNameInput.value = '';
     destinationInput.value = '';
     notesInput.value = '';
     foodCostInput.value = '0';
-    paidBySelect.value = 'firma';
-});
+}
+
+newOrderTab.addEventListener('click', () => switchTab('new'));
+historyTab.addEventListener('click', () => switchTab('history'));
+refreshHistoryBtn.addEventListener('click', loadOrderHistory);
 
 loadBusinessData();
