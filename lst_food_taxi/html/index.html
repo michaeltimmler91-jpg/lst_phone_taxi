@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Liefer-Taxi</title>
+    <link rel="stylesheet" href="style.css?v=1">
+</head>
+<body>
+    <main class="app">
+        <header class="hero">
+            <div class="icon">🍔</div>
+            <div>
+                <h1>Liefer-Taxi</h1>
+                <p id="companyText">Essenslieferung erstellen</p>
+            </div>
+        </header>
+
+        <section id="loadingCard" class="card info-card">
+            Firmendaten werden geladen...
+        </section>
+
+        <section id="deniedCard" class="card error-card hidden">
+            Diese App ist nur für freigeschaltete Essensgewerbe verfügbar.
+        </section>
+
+        <section id="formArea" class="hidden">
+            <section class="card pickup-card">
+                <span>Abholung</span>
+                <strong id="pickupText">-</strong>
+            </section>
+
+            <section class="card form-card">
+                <label for="customerName">Kundenname *</label>
+                <input id="customerName" type="text" maxlength="80" placeholder="z. B. Max Mustermann">
+
+                <label for="destination">Lieferort / PLZ *</label>
+                <input id="destination" type="text" maxlength="120" placeholder="z. B. PLZ 1012 / Pillbox">
+
+                <label for="notes">Bestellung / Notiz</label>
+                <textarea id="notes" rows="4" maxlength="500" placeholder="z. B. 2 Burger, 1 Cola, Hintereingang"></textarea>
+
+                <label for="foodCost">Essenskosten</label>
+                <div class="money-input">
+                    <input id="foodCost" type="number" min="0" step="1" value="0">
+                    <span>$</span>
+                </div>
+
+                <label for="paidBy">Bezahlung des Essens</label>
+                <select id="paidBy">
+                    <option value="firma">Schließfach / Firma</option>
+                    <option value="fahrer">Fahrer zahlt aus eigener Tasche</option>
+                </select>
+
+                <button id="submitBtn">🚕 Lieferauftrag senden</button>
+                <div id="message"></div>
+            </section>
+        </section>
+    </main>
+
+    <script src="app.js?v=1"></script>
+</body>
+</html>
