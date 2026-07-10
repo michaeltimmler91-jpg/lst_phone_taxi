@@ -3,9 +3,7 @@ local appRegistered = false
 local currentJob = nil
 
 local function debugPrint(...)
-    if Config.Debug then
-        print('[lst_food_taxi]', ...)
-    end
+    if Config.Debug then print('[lst_food_taxi]', ...) end
 end
 
 local function getJobConfig(jobName)
@@ -15,11 +13,7 @@ end
 
 local function removeFoodApp()
     if not appRegistered then return end
-
-    pcall(function()
-        exports['lb-phone']:RemoveCustomApp('FoodTaxi')
-    end)
-
+    pcall(function() exports['lb-phone']:RemoveCustomApp('FoodTaxi') end)
     appRegistered = false
     debugPrint('Essensliefer-App entfernt')
 end
@@ -41,13 +35,10 @@ local function registerFoodApp()
         size = 512,
         images = {},
         icon = 'https://cfx-nui-lst_phone_taxi/html/icon.png',
-        ui = 'lst_food_taxi/html/index.html?v=2'
+        ui = 'lst_food_taxi/html/index.html?v=3'
     }
 
-    local ok, result = pcall(function()
-        return exports['lb-phone']:AddCustomApp(appData)
-    end)
-
+    local ok, result = pcall(function() return exports['lb-phone']:AddCustomApp(appData) end)
     if ok then
         appRegistered = true
         debugPrint('Essensliefer-App registriert fuer Job', currentJob)
@@ -60,15 +51,10 @@ end
 
 local function refreshAppVisibility()
     local allowed = getJobConfig(currentJob) ~= nil
-
     if allowed then
         CreateThread(function()
-            while GetResourceState('lb-phone') ~= 'started' do
-                Wait(1000)
-            end
-
+            while GetResourceState('lb-phone') ~= 'started' do Wait(1000) end
             Wait(Config.PhoneRegisterDelayMs or 8000)
-
             for _ = 1, 20 do
                 if registerFoodApp() then return end
                 Wait(2000)
@@ -81,19 +67,18 @@ end
 
 RegisterNUICallback('getFoodBusinessData', function(_, cb)
     local jobConfig = getJobConfig(currentJob)
-
     if not jobConfig then
         cb({ ok = false, allowed = false, message = 'Du arbeitest in keinem freigeschalteten Essensgewerbe.' })
         return
     end
 
-    cb({
-        ok = true,
-        allowed = true,
-        job = currentJob,
-        company = jobConfig.label,
-        pickup = jobConfig.pickup
-    })
+    cb({ ok = true, allowed = true, job = currentJob, company = jobConfig.label, pickup = jobConfig.pickup })
+end)
+
+RegisterNUICallback('checkFoodTaxiAvailability', function(_, cb)
+    ESX.TriggerServerCallback('lst_food_taxi:checkTaxiAvailability', function(result)
+        cb(result or { ok = false, driversOnline = false })
+    end)
 end)
 
 RegisterNUICallback('createFoodDelivery', function(data, cb)
@@ -119,10 +104,7 @@ RegisterNetEvent('esx:setJob', function(job)
 end)
 
 CreateThread(function()
-    while not ESX.IsPlayerLoaded() do
-        Wait(500)
-    end
-
+    while not ESX.IsPlayerLoaded() do Wait(500) end
     local playerData = ESX.GetPlayerData()
     currentJob = playerData and playerData.job and playerData.job.name or nil
     refreshAppVisibility()
