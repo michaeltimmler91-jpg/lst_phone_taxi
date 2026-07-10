@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Liefer-Taxi</title>
-    <link rel="stylesheet" href="style.css?v=1">
+    <link rel="stylesheet" href="style.css?v=2">
 </head>
 <body>
     <main class="app">
@@ -24,40 +24,60 @@
             Diese App ist nur für freigeschaltete Essensgewerbe verfügbar.
         </section>
 
-        <section id="formArea" class="hidden">
-            <section class="card pickup-card">
-                <span>Abholung</span>
-                <strong id="pickupText">-</strong>
-            </section>
+        <section id="appArea" class="hidden">
+            <nav class="tabs">
+                <button id="newOrderTab" class="tab-btn active" type="button">➕ Neuer Auftrag</button>
+                <button id="historyTab" class="tab-btn" type="button">🕘 Letzte Aufträge</button>
+            </nav>
 
-            <section class="card form-card">
-                <label for="customerName">Kundenname *</label>
-                <input id="customerName" type="text" maxlength="80" placeholder="z. B. Max Mustermann">
-
-                <label for="destination">Lieferort / PLZ *</label>
-                <input id="destination" type="text" maxlength="120" placeholder="z. B. PLZ 1012 / Pillbox">
-
-                <label for="notes">Bestellung / Notiz</label>
-                <textarea id="notes" rows="4" maxlength="500" placeholder="z. B. 2 Burger, 1 Cola, Hintereingang"></textarea>
-
-                <label for="foodCost">Essenskosten</label>
-                <div class="money-input">
-                    <input id="foodCost" type="number" min="0" step="1" value="0">
-                    <span>$</span>
+            <section id="newOrderPanel" class="tab-panel">
+                <div id="successNotice" class="success-notice hidden">
+                    ✅ Auftrag wurde erfolgreich an die Leitstelle verschickt.
                 </div>
 
-                <label for="paidBy">Bezahlung des Essens</label>
-                <select id="paidBy">
-                    <option value="firma">Schließfach / Firma</option>
-                    <option value="fahrer">Fahrer zahlt aus eigener Tasche</option>
-                </select>
+                <section class="card pickup-card">
+                    <span>Abholung</span>
+                    <strong id="pickupText">-</strong>
+                </section>
 
-                <button id="submitBtn">🚕 Lieferauftrag senden</button>
-                <div id="message"></div>
+                <section class="card form-card">
+                    <label for="customerName">Kundenname *</label>
+                    <input id="customerName" type="text" maxlength="80" placeholder="z. B. Max Mustermann">
+
+                    <label for="destination">Lieferort / PLZ *</label>
+                    <input id="destination" type="text" maxlength="120" placeholder="z. B. PLZ 1012 / Pillbox">
+
+                    <label for="notes">Bestellung / Notiz</label>
+                    <textarea id="notes" rows="4" maxlength="500" placeholder="z. B. 2 Burger, 1 Cola, Hintereingang"></textarea>
+
+                    <label for="foodCost">Essenskosten</label>
+                    <div class="money-input">
+                        <input id="foodCost" type="number" min="0" step="1" value="0">
+                        <span>$</span>
+                    </div>
+
+                    <button id="submitBtn" type="button">🚕 Auftrag an Leitstelle senden</button>
+                    <div id="message"></div>
+                </section>
+            </section>
+
+            <section id="historyPanel" class="tab-panel hidden">
+                <section class="card history-card">
+                    <div class="history-head">
+                        <div>
+                            <strong>Letzte 10 Aufträge</strong>
+                            <small>Nur Aufträge deiner Firma</small>
+                        </div>
+                        <button id="refreshHistoryBtn" class="refresh-btn" type="button">↻</button>
+                    </div>
+                    <div id="historyList" class="history-list">
+                        <div class="empty-state">Aufträge werden geladen...</div>
+                    </div>
+                </section>
             </section>
         </section>
     </main>
 
-    <script src="app.js?v=1"></script>
+    <script src="app.js?v=2"></script>
 </body>
 </html>
